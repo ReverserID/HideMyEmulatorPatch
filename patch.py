@@ -163,19 +163,32 @@ def patch_module_status(smali):
 
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--apk", required=True)
-    ap.add_argument("--out", required=True)
+    ap = argparse.ArgumentParser(
+        description="HideMyEmulator 1.3 -> premium. Example: python patch.py release-1.3.apk")
+    ap.add_argument("apk", nargs="?", default="release-1.3.apk",
+                    help="input APK (default: release-1.3.apk)")
+    ap.add_argument("--apk", dest="apk_flag", default=None, help=argparse.SUPPRESS)
+    ap.add_argument("--out", default=None,
+                    help="output APK (default: <apk>-premium-signed.apk)")
     ap.add_argument("--apktool", default="C:/bin/apktool/apktool.jar")
     ap.add_argument("--build-tools", default=os.path.join(
         os.environ.get("ANDROID_HOME", ""), "build-tools", "36.0.0"))
-    ap.add_argument("--keystore", default=None)
+    ap.add_argument("--keystore", default=None,
+                    help="signing keystore (default: ephemeral key)")
     ap.add_argument("--storepass", default="android")
     ap.add_argument("--keypass", default="android")
-    ap.add_argument("--keyalias", default="key")
+    ap.add_argument("--keyalias", default=None,
+                    help="key alias (default: auto-detect, else 'key')")
     ap.add_argument("--no-sign", action="store_true")
     ap.add_argument("--workdir", default=None)
     a = ap.parse_args()
+    a.apk = a.apk_flag or a.apk
+    if not os.path.isfile(a.apk):
+        sys.exit(f"APK not found: {a.apk}")
+    if not a.out:
+        stem = os.path.splitext(os.path.basename(a.apk))[0]
+        a.out = os.path.join(os.path.dirname(a.apk) or ".",
+                             f"{stem}-premium-signed.apk")
 
     apktool = ["java", "-jar", a.apktool]
     zipalign = os.path.join(a.build_tools, "zipalign.exe")
@@ -204,13 +217,25 @@ def main():
 
     run([zipalign, "-f", "4", unsigned, aligned])
     ks = a.keystore
+    alias = a.keyalias
     if not ks:
         ks = os.path.join(work, "sign.keystore")
-        run(["keytool", "-genkeypair", "-keystore", ks, "-alias", a.keyalias,
+        alias = alias or "key"
+        run(["keytool", "-genkeypair", "-keystore", ks, "-alias", alias,
              "-keyalg", "RSA", "-keysize", "2048", "-validity", "10950",
              "-storepass", a.storepass, "-keypass", a.keypass,
              "-dname", "CN=Patch"], env_extra=sign_env)
-    run([apksigner, "sign", "--ks", ks, "--ks-key-alias", a.keyalias,
+    elif not alias:
+        # auto-detect first alias (e.g. debug keystore -> androiddebugkey)
+        out = subprocess.run(
+            ["keytool", "-list", "-keystore", ks,
+             "-storepass", a.storepass],
+            check=True, capture_output=True, text=True,
+            env={**os.environ, **sign_env}).stdout
+        m = re.search(r"^(\S+?),", out, re.MULTILINE)
+        alias = m.group(1) if m else "key"
+        print(f"using key alias: {alias}")
+    run([apksigner, "sign", "--ks", ks, "--ks-key-alias", alias,
          "--ks-pass", f"pass:{a.storepass}", "--key-pass", f"pass:{a.keypass}",
          "--out", a.out, aligned], env_extra=sign_env)
     run([apksigner, "verify", a.out], env_extra=sign_env)

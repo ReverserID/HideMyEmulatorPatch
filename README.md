@@ -26,13 +26,13 @@ Requires: Apktool 3.0.3, Android build-tools (apktool/`aapt2`, `zipalign`,
 `apksigner`), JDK.
 
 ```sh
-python patch.py --apk release-1.3.apk --out patched-premium-signed.apk
+python patch.py release-1.3.apk
+# -> release-1.3-premium-signed.apk (ephemeral key, ready to install)
 ```
 
-Options: `--apktool`, `--build-tools`, `--keystore/--storepass/--keypass/--keyalias`
-(defaults to the debug keystore; without `--keystore` an ephemeral key is
-generated), `--no-sign`, `--workdir`. JVM heap is capped internally so it also
-builds on machines with a small pagefile.
+Cuma itu. Semua opsional: `--out`, `--keystore` (alias auto-detect),
+`--apktool`, `--build-tools`, `--no-sign`, `--workdir`. JVM heap is capped
+internally so it also builds on machines with a small pagefile.
 
 Install:
 
