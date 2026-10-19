@@ -162,6 +162,100 @@ def patch_module_status(smali):
     )
 
 
+# ---- 1.4 patch set (server-side licensing: nb/s license state) ----
+
+def patch14_mapper(smali):
+    """d9/b.r() server-JSON mapper always returns lifetime premium."""
+    p = os.path.join(smali, "d9", "b.smali")
+    replace_once(
+        p,
+        r"\.method public static r\(Ljava/lang/String;Ljava/lang/String;Ljava/time/ZoneId;\)Lnb/s;.*?\.end method",
+        """.method public static r(Ljava/lang/String;Ljava/lang/String;Ljava/time/ZoneId;)Lnb/s;
+    .locals 1
+    new-instance p0, Lnb/p;
+    const/4 v0, 0x0
+    invoke-direct {p0, v0, v0}, Lnb/p;-><init>(Ljava/lang/Long;Ljava/lang/String;)V
+    return-object p0
+.end method""",
+        "d9/b mapper -> premium",
+    )
+
+
+def patch14_flow(smali):
+    """ec/q license flow fallback always premium."""
+    p = os.path.join(smali, "ec", "q.smali")
+    replace_once(
+        p,
+        r"(:cond_0\n)    sget-object p1, Lnb/r;->a:Lnb/r;",
+        r"""\1    new-instance p1, Lnb/p;
+    const/4 v1, 0x0
+    invoke-direct {p1, v1, v0}, Lnb/p;-><init>(Ljava/lang/Long;Ljava/lang/String;)V""",
+        "ec/q flow -> premium",
+    )
+
+
+def patch14_unlock_calc(smali):
+    """hc/r unlock computation always true (fixes VerifyError-safe const)."""
+    p = os.path.join(smali, "hc", "r.smali")
+    replace_once(
+        p,
+        r"    if-ne p1, v0, :cond_4",
+        "    const/4 p1, 0x1\n",
+        "hc/r unlock -> true",
+    )
+
+
+def patch14_state_flags(smali):
+    """hc/s combiner: force a-flag, i-flag and license to premium."""
+    p = os.path.join(smali, "hc", "s.smali")
+    replace_once(
+        p,
+        r"    iget-boolean v2, v0, Lhc/s;->i:Z",
+        "    const/4 v2, 0x1",
+        "hc/s a-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    iget-boolean v10, v0, Lhc/s;->m:Z",
+        "    const/4 v10, 0x1",
+        "hc/s i-flag -> true",
+    )
+    replace_once(
+        p,
+        r"(:cond_0\n)    const-wide v11, -0x14040da4ffffffd6L",
+        r"""\1    new-instance v1, Lnb/p;
+    const/4 v7, 0x0
+    invoke-direct {v1, v7, v7}, Lnb/p;-><init>(Ljava/lang/Long;Ljava/lang/String;)V
+    const-wide v11, -0x14040da4ffffffd6L""",
+        "hc/s license -> premium",
+    )
+
+
+def patch14_initial(smali):
+    """hc/t initial state: a-flag, i-flag and license to premium."""
+    p = os.path.join(smali, "hc", "t.smali")
+    replace_once(
+        p,
+        r"    const/4 v15, 0x0",
+        "    const/4 v15, 0x1",
+        "hc/t i-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    move v7, v3",
+        "    const/4 v7, 0x1",
+        "hc/t a-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    sget-object v8, Lnb/q;->a:Lnb/q;",
+        r"""    new-instance v8, Lnb/p;
+    const/4 v9, 0x0
+    invoke-direct {v8, v9, v9}, Lnb/p;-><init>(Ljava/lang/Long;Ljava/lang/String;)V""",
+        "hc/t license -> premium",
+    )
+
+
 def main():
     ap = argparse.ArgumentParser(
         description="HideMyEmulator 1.3 -> premium. Example: python patch.py release-1.3.apk")
@@ -203,11 +297,25 @@ def main():
 
     run(apktool + ["d", "-f", a.apk, "-o", dec], env_extra=java_env)
     smali = os.path.join(dec, "smali")
-    patch_mapper(smali)
-    patch_query_fallback(smali)
-    patch_combine(smali)
-    patch_initial(smali)
-    patch_module_status(smali)
+    with open(os.path.join(dec, "apktool.yml"), encoding="utf-8") as f:
+        m = re.search(r"versionName:\s*(\S+)", f.read())
+    ver = m.group(1) if m else ""
+    print(f"detected version: {ver}")
+    if ver.startswith("1.4"):
+        patch14_mapper(smali)
+        patch14_flow(smali)
+        patch_module_status(smali)
+        patch14_unlock_calc(smali)
+        patch14_state_flags(smali)
+        patch14_initial(smali)
+    elif ver.startswith("1.3"):
+        patch_mapper(smali)
+        patch_query_fallback(smali)
+        patch_combine(smali)
+        patch_initial(smali)
+        patch_module_status(smali)
+    else:
+        sys.exit(f"unsupported version: {ver}")
     run(apktool + ["b", dec, "-o", unsigned], env_extra=java_env)
 
     if a.no_sign:
