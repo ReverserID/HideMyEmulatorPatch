@@ -196,7 +196,7 @@ def patch14_flow(smali):
 
 
 def patch14_branding(smali, res):
-    """Status text -> Premium, launch toast with reverser.id credit."""
+    """Status text -> Premium, About credit, launch toast."""
     for d in ("values", "values-in"):
         p = os.path.join(res, d, "strings.xml")
         replace_once(
@@ -204,6 +204,21 @@ def patch14_branding(smali, res):
             r"<string name=\"app_info_not_activated\">.*?</string>",
             "<string name=\"app_info_not_activated\">Premium</string>",
             f"{d} status -> Premium",
+        )
+        replace_once(
+            p,
+            r"<string name=\"app_info_developer\">.*?</string>",
+            "<string name=\"app_info_developer\">Patched by reverser.id</string>",
+            f"{d} developer credit",
+        )
+        replace_once(
+            p,
+            r"<string name=\"app_info_about\">.*?</string>",
+            lambda m: m.group(0).replace(
+                m.group(0)[m.group(0).index(">") + 1:m.group(0).rindex("<")],
+                m.group(0)[m.group(0).index(">") + 1:m.group(0).rindex("<")]
+                + " · patched by reverser.id"),
+            f"{d} about header credit",
         )
     p = os.path.join(
         smali, "net", "wowsoftware", "hidemyemulator", "MainActivity.smali")
