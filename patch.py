@@ -194,6 +194,40 @@ def patch14_flow(smali):
     )
 
 
+
+def patch14_branding(smali, res):
+    """Status text -> Premium, launch toast with reverser.id credit."""
+    for d in ("values", "values-in"):
+        p = os.path.join(res, d, "strings.xml")
+        replace_once(
+            p,
+            r"<string name=\"app_info_not_activated\">.*?</string>",
+            "<string name=\"app_info_not_activated\">Premium</string>",
+            f"{d} status -> Premium",
+        )
+    p = os.path.join(
+        smali, "net", "wowsoftware", "hidemyemulator", "MainActivity.smali")
+    replace_once(
+        p,
+        r"(\.method public final onCreate\(Landroid/os/Bundle;\)V\n    \.locals 9\n\n    \.line 1\n)",
+        r"""\1    const-string v9, "Patched by reverser.id | https://reverser.id"
+    const/4 v10, 0x1
+    invoke-static {p0, v9, v10}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
+    move-result-object v9
+    invoke-virtual {v9}, Landroid/widget/Toast;->show()V
+""",
+        "launch toast",
+        must_contain=["reverser.id"],
+    )
+    # .locals 9 -> 11 for the two extra registers
+    replace_once(
+        p,
+        r"(\.method public final onCreate\(Landroid/os/Bundle;\)V\n)    \.locals 9",
+        r"\1    .locals 11",
+        "toast registers",
+    )
+
+
 def patch14_unlock_calc(smali):
     """hc/r unlock computation always true (fixes VerifyError-safe const)."""
     p = os.path.join(smali, "hc", "r.smali")
@@ -308,6 +342,7 @@ def main():
         patch14_unlock_calc(smali)
         patch14_state_flags(smali)
         patch14_initial(smali)
+        patch14_branding(smali, os.path.join(dec, "res"))
     elif ver.startswith("1.3"):
         patch_mapper(smali)
         patch_query_fallback(smali)

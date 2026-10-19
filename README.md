@@ -4,8 +4,8 @@ Reproducible smali patch for `net.wowsoftware.hidemyemulator` (1.3 and 1.4)
 that forces lifetime-premium license state. `patch.py` auto-detects the version.
 Verified on-device (Infinix, LSPosed): pill shows **Premium**, protections
 toggle + Apply, no paywall sheet.
-
 ![proof](proof.png)
+![toast](toast.png)
 
 ## v1.3 patch sites (local HME-License check, `o9/k` state)
 
@@ -21,12 +21,11 @@ The Xposed hook (`aa/f`, `w9/o`) never checks the license — only the UI gates
 the toggles, so forcing the license state unlocks everything downstream.
 
 ## v1.4 patch sites (server-side licensing, `nb/s` state)
-
-1.4 moved to account + `/api/subscription` licensing (`nb/p` = premium with
-email/expiry, `nb/q`/`nb/r` = unlicensed singletons). 9 sites: `d9/b.r`
-server-JSON mapper → `nb/p(null, null)`, `ec/q` flow fallback → premium,
-`hc/r` unlock calc → true, `hc/s` combiner (a-flag, i-flag, license),
-`hc/t` initial (a-flag, i-flag, license), plus `ModuleStatus`.
+1.4 moved to account + `/api/subscription` licensing. 9 sites: `d9/b.r` mapper,
+`ec/q` flow, `hc/r` unlock calc, `hc/s` combiner (a-flag, i-flag, license),
+`hc/t` initial (a-flag, i-flag, license), plus `ModuleStatus`. Plus branding:
+`app_info_not_activated` → Premium (EN+ID), launch Toast
+"Patched by reverser.id | https://reverser.id". Verified on-device: Premium pill, protections toggle + Apply, survives restart.
 
 Note: the `hc/s` combiner reads its license input from never-assigned fields,
 so patching upstream flows alone never reaches the UI — the license must be
