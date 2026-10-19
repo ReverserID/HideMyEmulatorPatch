@@ -24,7 +24,8 @@ the toggles, so forcing the license state unlocks everything downstream.
 1.4 moved to account + `/api/subscription` licensing. 9 sites: `d9/b.r` mapper,
 `ec/q` flow, `hc/r` unlock calc, `hc/s` combiner (a-flag, i-flag, license),
 `hc/t` initial (a-flag, i-flag, license), plus `ModuleStatus`. Plus branding:
-`app_info_not_activated` → Premium (EN+ID), launch Toast
+`app_info_not_activated` → Premium (EN+ID), About headers → credit
+"patched by reverser.id", launch Toast
 "Patched by reverser.id | https://reverser.id". Verified on-device: Premium pill, protections toggle + Apply, survives restart.
 
 Note: the `hc/s` combiner reads its license input from never-assigned fields,
