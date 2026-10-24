@@ -286,8 +286,8 @@ def patch15_initial(smali):
     )
 
 
-def patch14_branding(smali, res):
-    """Status text -> Premium, About credit, launch toast."""
+def patch_branding(smali, res):
+    """Status text -> Premium, About credit, styled launch toast."""
     for d in ("values", "values-in"):
         p = os.path.join(res, d, "strings.xml")
         replace_once(
@@ -316,20 +316,47 @@ def patch14_branding(smali, res):
     replace_once(
         p,
         r"(\.method public final onCreate\(Landroid/os/Bundle;\)V\n    \.locals 9\n\n    \.line 1\n)",
-        r"""\1    const-string v9, "Patched by reverser.id | https://reverser.id"
+    r"""\1    new-instance v9, Landroid/widget/TextView;
+    invoke-direct {v9, p0}, Landroid/widget/TextView;-><init>(Landroid/content/Context;)V
+    const-string v10, "\\u2726 Patched by reverser.id | https://reverser.id"
+    invoke-virtual {v9, v10}, Landroid/widget/TextView;->setText(Ljava/lang/CharSequence;)V
+    const v10, -0x50506
+    invoke-virtual {v9, v10}, Landroid/widget/TextView;->setTextColor(I)V
+    const/high16 v10, 0x41600000
+    const/4 v11, 0x2
+    invoke-virtual {v9, v11, v10}, Landroid/widget/TextView;->setTextSize(IF)V
+    const/16 v10, 0x2c
+    const/16 v11, 0x18
+    invoke-virtual {v9, v10, v11, v10, v11}, Landroid/widget/TextView;->setPadding(IIII)V
+    new-instance v12, Landroid/graphics/drawable/GradientDrawable;
+    invoke-direct {v12}, Landroid/graphics/drawable/GradientDrawable;-><init>()V
+    const v10, -0xd9d9da
+    invoke-virtual {v12, v10}, Landroid/graphics/drawable/GradientDrawable;->setColor(I)V
+    const/high16 v10, 0x42200000
+    invoke-virtual {v12, v10}, Landroid/graphics/drawable/GradientDrawable;->setCornerRadius(F)V
+    const/4 v10, 0x2
+    const v11, -0xa73f01
+    invoke-virtual {v12, v10, v11}, Landroid/graphics/drawable/GradientDrawable;->setStroke(II)V
+    invoke-virtual {v9, v12}, Landroid/widget/TextView;->setBackground(Landroid/graphics/drawable/Drawable;)V
+    new-instance v12, Landroid/widget/Toast;
+    invoke-direct {v12, p0}, Landroid/widget/Toast;-><init>(Landroid/content/Context;)V
+    invoke-virtual {v12, v9}, Landroid/widget/Toast;->setView(Landroid/view/View;)V
     const/4 v10, 0x1
-    invoke-static {p0, v9, v10}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
-    move-result-object v9
-    invoke-virtual {v9}, Landroid/widget/Toast;->show()V
+    invoke-virtual {v12, v10}, Landroid/widget/Toast;->setDuration(I)V
+    const/16 v10, 0x51
+    const/4 v11, 0x0
+    const/16 v13, 0x60
+    invoke-virtual {v12, v10, v11, v13}, Landroid/widget/Toast;->setGravity(III)V
+    invoke-virtual {v12}, Landroid/widget/Toast;->show()V
 """,
-        "launch toast",
+        "launch toast (styled)",
         must_contain=["reverser.id"],
     )
-    # .locals 9 -> 11 for the two extra registers
+    # .locals 9 -> 14 for the extra registers
     replace_once(
         p,
         r"(\.method public final onCreate\(Landroid/os/Bundle;\)V\n)    \.locals 9",
-        r"\1    .locals 11",
+        r"\1    .locals 14",
         "toast registers",
     )
 
@@ -448,7 +475,7 @@ def main():
         patch15_unlock_calc(smali)
         patch15_state_flags(smali)
         patch15_initial(smali)
-        patch14_branding(smali, os.path.join(dec, "res"))
+        patch_branding(smali, os.path.join(dec, "res"))
     elif ver.startswith("1.4"):
         patch14_mapper(smali)
         patch14_flow(smali)
@@ -456,13 +483,14 @@ def main():
         patch14_unlock_calc(smali)
         patch14_state_flags(smali)
         patch14_initial(smali)
-        patch14_branding(smali, os.path.join(dec, "res"))
+        patch_branding(smali, os.path.join(dec, "res"))
     elif ver.startswith("1.3"):
         patch_mapper(smali)
         patch_query_fallback(smali)
         patch_combine(smali)
         patch_initial(smali)
         patch_module_status(smali)
+        patch_branding(smali, os.path.join(dec, "res"))
     else:
         sys.exit(f"unsupported version: {ver}")
     run(apktool + ["b", dec, "-o", unsigned], env_extra=java_env)
