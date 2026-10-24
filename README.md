@@ -31,7 +31,8 @@ forced at the `hc/q` assembly point too.
 ## v1.5 patch sites (re-obfuscated server licensing, `ob/r` premium)
 Same shape, new names: `d9/a.H` mapper, `hc/p` flow, `kc/p` unlock calc,
 `kc/q` combiner (a-flag, i-flag, license), `kc/r` initial (a-flag, i-flag,
-license), plus `ModuleStatus`. Plus branding (both 1.4/1.5):
+license), plus `ModuleStatus`. Update checker neutralized (`sb/y` always
+reports no-update: no nag, no forced-update screen). Plus branding (EN+ID):
 `app_info_not_activated` → Premium (EN+ID), About headers → credit
 "patched by reverser.id", launch Toast
 "Patched by reverser.id | https://reverser.id".
