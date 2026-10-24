@@ -286,6 +286,19 @@ def patch15_initial(smali):
     )
 
 
+def patch15_noupdate(smali):
+    """sb/y update gate always reports no-update."""
+    p = os.path.join(smali, "sb", "y.smali")
+    replace_once(
+        p,
+        r"(\.method public static a\(ILsb/q;\)Lsb/n0;\n    \.locals 17\n\n    \.line 1\n)    move/from16 v0, p0",
+        r"""\1    sget-object p0, Lsb/m0;->a:Lsb/m0;
+
+    return-object p0""",
+        "sb/y update -> none",
+    )
+
+
 def patch_branding(smali, res):
     """Status text -> Premium, About credit, styled launch toast."""
     for d in ("values", "values-in"):
@@ -475,6 +488,7 @@ def main():
         patch15_unlock_calc(smali)
         patch15_state_flags(smali)
         patch15_initial(smali)
+        patch15_noupdate(smali)
         patch_branding(smali, os.path.join(dec, "res"))
     elif ver.startswith("1.4"):
         patch14_mapper(smali)
