@@ -23,22 +23,26 @@ the toggles, so forcing the license state unlocks everything downstream.
 ## v1.4 patch sites (server-side licensing, `nb/s` state)
 1.4 moved to account + `/api/subscription` licensing. 9 sites: `d9/b.r` mapper,
 `ec/q` flow, `hc/r` unlock calc, `hc/s` combiner (a-flag, i-flag, license),
-`hc/t` initial (a-flag, i-flag, license), plus `ModuleStatus`. Plus branding:
-`app_info_not_activated` → Premium (EN+ID), About headers → credit
-"patched by reverser.id", launch Toast
-"Patched by reverser.id | https://reverser.id". Verified on-device: Premium pill, protections toggle + Apply, survives restart.
-
+`hc/t` initial (a-flag, i-flag, license), plus `ModuleStatus`.
 Note: the `hc/s` combiner reads its license input from never-assigned fields,
 so patching upstream flows alone never reaches the UI — the license must be
 forced at the `hc/q` assembly point too.
+
+## v1.5 patch sites (re-obfuscated server licensing, `ob/r` premium)
+Same shape, new names: `d9/a.H` mapper, `hc/p` flow, `kc/p` unlock calc,
+`kc/q` combiner (a-flag, i-flag, license), `kc/r` initial (a-flag, i-flag,
+license), plus `ModuleStatus`. Plus branding (both 1.4/1.5):
+`app_info_not_activated` → Premium (EN+ID), About headers → credit
+"patched by reverser.id", launch Toast
+"Patched by reverser.id | https://reverser.id".
 
 ## Usage
 
 Requires: Apktool 3.0.3, Android build-tools (`zipalign`, `apksigner`), JDK.
 
 ```sh
-python patch.py release-1.4.apk
-# -> release-1.4-premium-signed.apk (ephemeral key, ready to install)
+python patch.py release-1.5.apk
+# -> release-1.5-premium-signed.apk (ephemeral key, ready to install)
 ```
 
 Cuma itu. Semua opsional: `--out`, `--keystore` (alias auto-detect),
@@ -48,7 +52,7 @@ internally so it also builds on machines with a small pagefile.
 Install:
 
 ```sh
-adb install -r release-1.4-premium-signed.apk
+adb install -r release-1.5-premium-signed.apk
 ```
 
 Then in LSPosed Manager enable the module + scope, **reboot**, toggle

@@ -195,6 +195,97 @@ def patch14_flow(smali):
 
 
 
+# ---- 1.5 patch set (same server licensing, re-obfuscated: ob/r premium) ----
+
+def patch15_mapper(smali):
+    """d9/a.H() server-JSON mapper always returns lifetime premium."""
+    p = os.path.join(smali, "d9", "a.smali")
+    replace_once(
+        p,
+        r"\.method public static H\(Ljava/lang/String;Ljava/lang/String;Ljava/time/ZoneId;\)Lob/u;.*?\.end method",
+        """.method public static H(Ljava/lang/String;Ljava/lang/String;Ljava/time/ZoneId;)Lob/u;
+    .locals 1
+    new-instance p0, Lob/r;
+    const/4 v0, 0x0
+    invoke-direct {p0, v0, v0}, Lob/r;-><init>(Ljava/lang/Long;Ljava/lang/String;)V
+    return-object p0
+.end method""",
+        "d9/a mapper -> premium",
+    )
+
+
+def patch15_flow(smali):
+    """hc/p license flow fallback always premium."""
+    p = os.path.join(smali, "hc", "p.smali")
+    replace_once(
+        p,
+        r"(:cond_0\n)    sget-object p1, Lob/t;->a:Lob/t;",
+        r"""\1    new-instance p1, Lob/r;
+    const/4 v1, 0x0
+    invoke-direct {p1, v1, v0}, Lob/r;-><init>(Ljava/lang/Long;Ljava/lang/String;)V""",
+        "hc/p flow -> premium",
+    )
+
+
+def patch15_unlock_calc(smali):
+    p = os.path.join(smali, "kc", "p.smali")
+    replace_once(
+        p,
+        r"    if-ne p1, v0, :cond_4",
+        "    const/4 p1, 0x1\n",
+        "kc/r unlock -> true",
+    )
+
+
+def patch15_state_flags(smali):
+    p = os.path.join(smali, "kc", "q.smali")
+    replace_once(
+        p,
+        r"    iget-boolean v2, v0, Lkc/q;->i:Z",
+        "    const/4 v2, 0x1",
+        "kc/q a-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    iget-boolean v10, v0, Lkc/q;->m:Z",
+        "    const/4 v10, 0x1",
+        "kc/q i-flag -> true",
+    )
+    replace_once(
+        p,
+        r"(:cond_0\n)    const-wide v11, -0x140411d2ffffffd6L",
+        r"""\1    new-instance v1, Lob/r;
+    const/4 v7, 0x0
+    invoke-direct {v1, v7, v7}, Lob/r;-><init>(Ljava/lang/Long;Ljava/lang/String;)V
+    const-wide v11, -0x140411d2ffffffd6L""",
+        "kc/q license -> premium",
+    )
+
+
+def patch15_initial(smali):
+    p = os.path.join(smali, "kc", "r.smali")
+    replace_once(
+        p,
+        r"    const/4 v15, 0x0",
+        "    const/4 v15, 0x1",
+        "kc/r i-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    move v7, v3",
+        "    const/4 v7, 0x1",
+        "kc/r a-flag -> true",
+    )
+    replace_once(
+        p,
+        r"    sget-object v8, Lob/s;->a:Lob/s;",
+        r"""    new-instance v8, Lob/r;
+    const/4 v9, 0x0
+    invoke-direct {v8, v9, v9}, Lob/r;-><init>(Ljava/lang/Long;Ljava/lang/String;)V""",
+        "kc/r license -> premium",
+    )
+
+
 def patch14_branding(smali, res):
     """Status text -> Premium, About credit, launch toast."""
     for d in ("values", "values-in"):
@@ -307,7 +398,7 @@ def patch14_initial(smali):
 
 def main():
     ap = argparse.ArgumentParser(
-        description="HideMyEmulator 1.3 -> premium. Example: python patch.py release-1.3.apk")
+        description="HideMyEmulator 1.3/1.4/1.5 -> premium. Example: python patch.py release-1.5.apk")
     ap.add_argument("apk", nargs="?", default="release-1.3.apk",
                     help="input APK (default: release-1.3.apk)")
     ap.add_argument("--apk", dest="apk_flag", default=None, help=argparse.SUPPRESS)
@@ -350,7 +441,15 @@ def main():
         m = re.search(r"versionName:\s*(\S+)", f.read())
     ver = m.group(1) if m else ""
     print(f"detected version: {ver}")
-    if ver.startswith("1.4"):
+    if ver.startswith("1.5"):
+        patch15_mapper(smali)
+        patch15_flow(smali)
+        patch_module_status(smali)
+        patch15_unlock_calc(smali)
+        patch15_state_flags(smali)
+        patch15_initial(smali)
+        patch14_branding(smali, os.path.join(dec, "res"))
+    elif ver.startswith("1.4"):
         patch14_mapper(smali)
         patch14_flow(smali)
         patch_module_status(smali)
